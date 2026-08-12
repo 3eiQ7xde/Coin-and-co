@@ -51,7 +51,20 @@ function fmtSec(s){s=Math.max(0,Math.floor(s));return `${String(Math.floor(s/360
 function nowSec(){return state.timer.running?Math.floor((Date.now()-state.timer.start)/1000):state.timer.elapsed}
 function toast(t){let e=document.getElementById('toast');e.textContent=t;e.style.display='block';clearTimeout(window.toastT);window.toastT=setTimeout(()=>e.style.display='none',2300)}
 function flash(t,s=''){document.getElementById('overlayTitle').textContent=t;document.getElementById('overlaySub').textContent=s;document.getElementById('overlay').style.display='flex';setTimeout(()=>document.getElementById('overlay').style.display='none',850)}
-function show(id){document.querySelectorAll('.screen').forEach(e=>e.classList.remove('active'));document.getElementById(id).classList.add('active');document.querySelectorAll('.nav button').forEach(e=>e.classList.remove('active'));document.getElementById('nav-'+id).classList.add('active');render()}
+function show(id){
+  document.querySelectorAll('.screen').forEach(e=>e.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+
+  document.querySelectorAll('.nav button').forEach(e=>e.classList.remove('active'));
+  document.getElementById('nav-'+id).classList.add('active');
+
+  render();
+
+  if(id==='log'){
+    renderHistory();
+    renderRecords();
+  }
+}
 function addHistory(text,amount=0){state.history.push({text,amount,at:new Date().toLocaleString('ja-JP')});if(state.history.length>400)state.history.shift()}
 function earn(n,reason){if(n<=0)return;if(state.event?.type==='double')n*=2;if(state.pending.doubleCoin){n*=2;state.pending.doubleCoin=false;addHistory('💎 DOUBLE COIN 発動',0)}if(state.pending.coinMagnet){n+=5;state.pending.coinMagnet=false;addHistory('🪙 COIN MAGNET 発動',5)}state.coins+=n;state.earned+=n;day();state.daily[key()].earned+=n;state.daily[key()].balance=state.coins;addHistory(reason,n)}
 function spend(n,reason){state.coins-=n;state.spent+=n;day();state.daily[key()].spent+=n;state.daily[key()].balance=state.coins;addHistory(reason,-n)}
@@ -126,7 +139,6 @@ function renderShop(){let last='';let h='';SHOP.forEach((s,i)=>{if(s[3]!==last){
 function renderInventory(){let ks=Object.keys(state.inventory).filter(k=>state.inventory[k]>0);document.getElementById('inventory').innerHTML=ks.length?ks.map(k=>{let d=ITEMS[k];return `<div class="item"><div class="emoji">${d[0]}</div><b>${d[1]}</b><small>×${state.inventory[k]}<br>${d[2]}</small><button class="use" onclick="useItem('${k}')">使う</button></div>`}).join(''):'<div class="note" style="grid-column:1/-1;text-align:center">まだアイテムがありません。宝箱を開けてみよう！</div>'}
 function renderCollections(){document.getElementById('collections').innerHTML=COLLECTIONS.map((c,ci)=>{let have=c.pieces.filter((_,pi)=>state.collection.some(x=>x.ci===ci&&x.pi===pi)).length;return `<div class="collection ${have===c.pieces.length?'complete':''}"><b>${c.name}</b><div class="pieces">${c.pieces.join(' ')}</div><small>${have}/${c.pieces.length} ${have===c.pieces.length?'🏆 COMPLETE!':'COLLECTED'}</small><br><small>コンプリート報酬：${c.reward}</small></div>`}).join('')}
 function renderHistory(){
-  alert("renderHistory動いた！");
   let totalStudy=state.totalMin;
   let totalEarned=state.earned;
   let totalSpent=state.spent;
