@@ -55,7 +55,39 @@ function show(id){document.querySelectorAll('.screen').forEach(e=>e.classList.re
 function addHistory(text,amount=0){state.history.push({text,amount,at:new Date().toLocaleString('ja-JP')});if(state.history.length>400)state.history.shift()}
 function earn(n,reason){if(n<=0)return;if(state.event?.type==='double')n*=2;if(state.pending.doubleCoin){n*=2;state.pending.doubleCoin=false;addHistory('💎 DOUBLE COIN 発動',0)}if(state.pending.coinMagnet){n+=5;state.pending.coinMagnet=false;addHistory('🪙 COIN MAGNET 発動',5)}state.coins+=n;state.earned+=n;day();state.daily[key()].earned+=n;state.daily[key()].balance=state.coins;addHistory(reason,n)}
 function spend(n,reason){state.coins-=n;state.spent+=n;day();state.daily[key()].spent+=n;state.daily[key()].balance=state.coins;addHistory(reason,-n)}
-function study(min,source){if(min<10){toast('10分以上から記録できます');return}let counted=min;if(source==='自己申告'&&state.event?.type==='selfdouble')counted*=2;state.todayMin+=counted;state.totalMin+=counted;day();state.daily[key()].study+=counted;state.daily[key()].balance=state.coins;earn(Math.floor(counted/10),`📚 ${source} ${counted}分勉強`);checkMissions();if(state.event?.type==='streakboost'&&state.todayMin>=480&&!state.pending.streakGiven){state.pending.streakGiven=true;earn(10,'🔥 STREAK BOOST達成')}save();toast(`＋${Math.floor(counted/10)}🪙！ ${counted}分記録`)}
+function study(min,source){
+  if(min<1){
+    toast('1分以上から記録できます');
+    return;
+  }
+
+  let counted=Math.floor(min);
+
+  state.todayMin+=counted;
+  state.totalMin+=counted;
+
+  day();
+
+  state.daily[key()].study+=counted;
+  state.daily[key()].balance=state.coins;
+
+  earn(Math.floor(counted/10),`📚 ${source} ${counted}分勉強`);
+
+  checkMissions();
+
+  if(
+    state.event?.type==='streakboost' &&
+    state.todayMin>=480 &&
+    !state.pending.streakGiven
+  ){
+    state.pending.streakGiven=true;
+    earn(10,'🔥 STREAK BOOST達成');
+  }
+
+  save();
+
+  toast(`＋${Math.floor(counted/10)}🪙！ ${counted}分記録`);
+}
 function startTimer(){if(state.timer.running)return;state.timer.start=Date.now()-(state.timer.elapsed||0)*1000;state.timer.running=true;save();flash('STUDY MODE ON','集中タイム、スタート！')}
 function pauseTimer(){if(!state.timer.running)return;state.timer.elapsed=nowSec();state.timer.running=false;state.timer.start=null;save();toast('タイマーを一時停止しました')}
 function finishTimer(){let sec=nowSec();if(sec<60){toast('1分未満なので記録しません');return}let min=Math.floor(sec/60);state.timer={running:false,start:null,elapsed:0};study(min,'タイマー')}
