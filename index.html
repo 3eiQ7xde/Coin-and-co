@@ -69,37 +69,43 @@ function addHistory(text,amount=0){state.history.push({text,amount,at:new Date()
 function earn(n,reason){if(n<=0)return;if(state.event?.type==='double')n*=2;if(state.pending.doubleCoin){n*=2;state.pending.doubleCoin=false;addHistory('💎 DOUBLE COIN 発動',0)}if(state.pending.coinMagnet){n+=5;state.pending.coinMagnet=false;addHistory('🪙 COIN MAGNET 発動',5)}state.coins+=n;state.earned+=n;day();state.daily[key()].earned+=n;state.daily[key()].balance=state.coins;addHistory(reason,n)}
 function spend(n,reason){state.coins-=n;state.spent+=n;day();state.daily[key()].spent+=n;state.daily[key()].balance=state.coins;addHistory(reason,-n)}
 function study(min,source){
-  if(min<1){
+  min = Math.floor(Number(min));
+
+  if(!Number.isFinite(min) || min < 1){
     toast('1分以上から記録できます');
     return;
   }
 
-  let counted=Math.floor(min);
+  const today = key();
 
-  state.todayMin+=counted;
-  state.totalMin+=counted;
+  if(!state.daily[today]){
+    state.daily[today] = {
+      study: 0,
+      earned: 0,
+      spent: 0,
+      balance: state.coins
+    };
+  }
 
-  day();
+  // 勉強時間を記録
+  state.todayMin += min;
+  state.totalMin += min;
+  state.daily[today].study += min;
 
-  state.daily[key()].study+=counted;
-  state.daily[key()].balance=state.coins;
+  // 勉強コインを付与
+  const reward = Math.floor(min / 10);
+  if(reward > 0){
+    earn(reward, `📚 ${source} ${min}分勉強`);
+  }
 
-  earn(Math.floor(counted/10),`📚 ${source} ${counted}分勉強`);
+  // 今日の残高を保存
+  state.daily[today].balance = state.coins;
 
   checkMissions();
 
-  if(
-    state.event?.type==='streakboost' &&
-    state.todayMin>=480 &&
-    !state.pending.streakGiven
-  ){
-    state.pending.streakGiven=true;
-    earn(10,'🔥 STREAK BOOST達成');
-  }
-
   save();
 
-  toast(`＋${Math.floor(counted/10)}🪙！ ${counted}分記録`);
+  toast(`＋${reward}🪙！ ${min}分記録`);
 }
 function startTimer(){if(state.timer.running)return;state.timer.start=Date.now()-(state.timer.elapsed||0)*1000;state.timer.running=true;save();flash('STUDY MODE ON','集中タイム、スタート！')}
 function pauseTimer(){if(!state.timer.running)return;state.timer.elapsed=nowSec();state.timer.running=false;state.timer.start=null;save();toast('タイマーを一時停止しました')}
@@ -139,41 +145,51 @@ function renderShop(){let last='';let h='';SHOP.forEach((s,i)=>{if(s[3]!==last){
 function renderInventory(){let ks=Object.keys(state.inventory).filter(k=>state.inventory[k]>0);document.getElementById('inventory').innerHTML=ks.length?ks.map(k=>{let d=ITEMS[k];return `<div class="item"><div class="emoji">${d[0]}</div><b>${d[1]}</b><small>×${state.inventory[k]}<br>${d[2]}</small><button class="use" onclick="useItem('${k}')">使う</button></div>`}).join(''):'<div class="note" style="grid-column:1/-1;text-align:center">まだアイテムがありません。宝箱を開けてみよう！</div>'}
 function renderCollections(){document.getElementById('collections').innerHTML=COLLECTIONS.map((c,ci)=>{let have=c.pieces.filter((_,pi)=>state.collection.some(x=>x.ci===ci&&x.pi===pi)).length;return `<div class="collection ${have===c.pieces.length?'complete':''}"><b>${c.name}</b><div class="pieces">${c.pieces.join(' ')}</div><small>${have}/${c.pieces.length} ${have===c.pieces.length?'🏆 COMPLETE!':'COLLECTED'}</small><br><small>コンプリート報酬：${c.reward}</small></div>`}).join('')}
 function renderHistory(){
-  let totalStudy=state.totalMin;
-  let totalEarned=state.earned;
-  let totalSpent=state.spent;
+  const totalStudy = Object.values(state.daily)
+    .reduce((sum,d) => sum + (Number(d.study) || 0), 0);
 
-  document.getElementById('totalStudy').textContent=fmtMin(totalStudy);
-  document.getElementById('earned').textContent=Math.round(totalEarned*10)/10;
-  document.getElementById('spent').textContent=Math.round(totalSpent*10)/10;
+  const totalEarned = Object.values(state.daily)
+    .reduce((sum,d) => sum + (Number(d.earned) || 0), 0);
 
-  document.getElementById('history').innerHTML=
+  const totalSpent = Object.values(state.daily)
+    .reduce((sum,d) => sum + (Number(d.spent) || 0), 0);
+
+  document.getElementById('totalStudy').textContent = fmtMin(totalStudy);
+  document.getElementById('earned').textContent =
+    Math.round(totalEarned * 10) / 10;
+  document.getElementById('spent').textContent =
+    Math.round(totalSpent * 10) / 10;
+
+  document.getElementById('history').innerHTML =
     state.history.length
-      ? state.history.slice().reverse().map(x=>`
-        <div class="logItem">
-          ${x.text}
-          <span class="amt">${x.amount>0?'+':x.amount<0?'':''}${x.amount?x.amount+'🪙':''}</span>
-          <br><small>${x.at}</small>
-        </div>
-      `).join('')
+      ? state.history.slice().reverse().map(x => `
+          <div class="logItem">
+            ${x.text}
+            <span class="amt">
+              ${x.amount > 0 ? '+' : x.amount < 0 ? '' : ''}
+              ${x.amount ? x.amount + '🪙' : ''}
+            </span>
+            <br>
+            <small>${x.at}</small>
+          </div>
+        `).join('')
       : '<div class="note">まだ記録がありません。</div>';
 }
 function renderRecords(){
-  let rows=Object.entries(state.daily)
-    .sort((a,b)=>a[0].localeCompare(b[0]))
-    .reverse();
+  const rows = Object.entries(state.daily)
+    .sort((a,b) => b[0].localeCompare(a[0]));
 
-  document.getElementById('records').innerHTML=
+  document.getElementById('records').innerHTML =
     rows.length
-      ? rows.map(([d,v])=>`
-        <tr>
-          <td>${d}</td>
-          <td>${fmtMin(Number(v.study)||0)}</td>
-          <td>+${Number(v.earned)||0}</td>
-          <td>-${Number(v.spent)||0}</td>
-          <td>${v.balance??state.coins}</td>
-        </tr>
-      `).join('')
+      ? rows.map(([date,data]) => `
+          <tr>
+            <td>${date}</td>
+            <td>${fmtMin(Number(data.study) || 0)}</td>
+            <td>+${Number(data.earned) || 0}</td>
+            <td>-${Number(data.spent) || 0}</td>
+            <td>${data.balance ?? state.coins}</td>
+          </tr>
+        `).join('')
       : '<tr><td colspan="5">まだ記録がありません</td></tr>';
 }
 function renderEvents(){document.getElementById('eventList').innerHTML=EVENTS.map(e=>`<div class="mission"><div><b>${e.emoji} ${e.name}</b><br><span>${e.text}</span></div><strong>${e.rarity}</strong></div>`).join('')}
