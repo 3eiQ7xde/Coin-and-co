@@ -93,8 +93,44 @@ function renderMissions(){document.getElementById('missions').innerHTML=MISSIONS
 function renderShop(){let last='';let h='';SHOP.forEach((s,i)=>{if(s[3]!==last){h+=`<div class="category">${s[3]}</div>`;last=s[3]}h+=`<div class="shopRow"><div class="shopIcon">${s[0]}</div><div class="shopName">${s[1]}</div><button class="price" onclick="buy(${i})">${effectiveCost(s[2])}🪙</button></div>`});document.getElementById('shopList').innerHTML=h}
 function renderInventory(){let ks=Object.keys(state.inventory).filter(k=>state.inventory[k]>0);document.getElementById('inventory').innerHTML=ks.length?ks.map(k=>{let d=ITEMS[k];return `<div class="item"><div class="emoji">${d[0]}</div><b>${d[1]}</b><small>×${state.inventory[k]}<br>${d[2]}</small><button class="use" onclick="useItem('${k}')">使う</button></div>`}).join(''):'<div class="note" style="grid-column:1/-1;text-align:center">まだアイテムがありません。宝箱を開けてみよう！</div>'}
 function renderCollections(){document.getElementById('collections').innerHTML=COLLECTIONS.map((c,ci)=>{let have=c.pieces.filter((_,pi)=>state.collection.some(x=>x.ci===ci&&x.pi===pi)).length;return `<div class="collection ${have===c.pieces.length?'complete':''}"><b>${c.name}</b><div class="pieces">${c.pieces.join(' ')}</div><small>${have}/${c.pieces.length} ${have===c.pieces.length?'🏆 COMPLETE!':'COLLECTED'}</small><br><small>コンプリート報酬：${c.reward}</small></div>`}).join('')}
-function renderHistory(){document.getElementById('totalStudy').textContent=fmtMin(state.totalMin);document.getElementById('earned').textContent=Math.round(state.earned*10)/10;document.getElementById('spent').textContent=Math.round(state.spent*10)/10;document.getElementById('history').innerHTML=state.history.length?state.history.slice().reverse().map(x=>`<div class="logItem">${x.text}<span class="amt">${x.amount>0?'+':x.amount<0?'':''}${x.amount?x.amount+'🪙':''}</span><br><small>${x.at}</small></div>`).join(''):'<div class="note">まだ記録がありません。</div>'}
-function renderRecords(){let rows=Object.entries(state.daily).sort((a,b)=>a[0].localeCompare(b[0])).reverse();document.getElementById('records').innerHTML=rows.map(([d,v])=>`<tr><td>${d}</td><td>${fmtMin(v.study||0)}</td><td>+${v.earned||0}</td><td>-${v.spent||0}</td><td>${v.balance??state.coins}</td></tr>`).join('')||'<tr><td colspan="5">まだ記録がありません</td></tr>'}
+function renderHistory(){
+  let totalStudy=Object.values(state.daily).reduce((sum,d)=>sum+(Number(d.study)||0),0);
+  let totalEarned=Object.values(state.daily).reduce((sum,d)=>sum+(Number(d.earned)||0),0);
+  let totalSpent=Object.values(state.daily).reduce((sum,d)=>sum+(Number(d.spent)||0),0);
+
+  document.getElementById('totalStudy').textContent=fmtMin(totalStudy);
+  document.getElementById('earned').textContent=Math.round(totalEarned*10)/10;
+  document.getElementById('spent').textContent=Math.round(totalSpent*10)/10;
+
+  document.getElementById('history').innerHTML=
+    state.history.length
+      ? state.history.slice().reverse().map(x=>`
+        <div class="logItem">
+          ${x.text}
+          <span class="amt">${x.amount>0?'+':x.amount<0?'':''}${x.amount?x.amount+'🪙':''}</span>
+          <br><small>${x.at}</small>
+        </div>
+      `).join('')
+      : '<div class="note">まだ記録がありません。</div>';
+}
+function renderRecords(){
+  let rows=Object.entries(state.daily)
+    .sort((a,b)=>a[0].localeCompare(b[0]))
+    .reverse();
+
+  document.getElementById('records').innerHTML=
+    rows.length
+      ? rows.map(([d,v])=>`
+        <tr>
+          <td>${d}</td>
+          <td>${fmtMin(Number(v.study)||0)}</td>
+          <td>+${Number(v.earned)||0}</td>
+          <td>-${Number(v.spent)||0}</td>
+          <td>${v.balance??state.coins}</td>
+        </tr>
+      `).join('')
+      : '<tr><td colspan="5">まだ記録がありません</td></tr>';
+}
 function renderEvents(){document.getElementById('eventList').innerHTML=EVENTS.map(e=>`<div class="mission"><div><b>${e.emoji} ${e.name}</b><br><span>${e.text}</span></div><strong>${e.rarity}</strong></div>`).join('')}
 render();
 </script></body></html>
