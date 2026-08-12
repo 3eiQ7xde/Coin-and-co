@@ -94,10 +94,9 @@ function renderShop(){let last='';let h='';SHOP.forEach((s,i)=>{if(s[3]!==last){
 function renderInventory(){let ks=Object.keys(state.inventory).filter(k=>state.inventory[k]>0);document.getElementById('inventory').innerHTML=ks.length?ks.map(k=>{let d=ITEMS[k];return `<div class="item"><div class="emoji">${d[0]}</div><b>${d[1]}</b><small>×${state.inventory[k]}<br>${d[2]}</small><button class="use" onclick="useItem('${k}')">使う</button></div>`}).join(''):'<div class="note" style="grid-column:1/-1;text-align:center">まだアイテムがありません。宝箱を開けてみよう！</div>'}
 function renderCollections(){document.getElementById('collections').innerHTML=COLLECTIONS.map((c,ci)=>{let have=c.pieces.filter((_,pi)=>state.collection.some(x=>x.ci===ci&&x.pi===pi)).length;return `<div class="collection ${have===c.pieces.length?'complete':''}"><b>${c.name}</b><div class="pieces">${c.pieces.join(' ')}</div><small>${have}/${c.pieces.length} ${have===c.pieces.length?'🏆 COMPLETE!':'COLLECTED'}</small><br><small>コンプリート報酬：${c.reward}</small></div>`}).join('')}
 function renderHistory(){
-  alert(JSON.stringify(state.daily));
-  let totalStudy=Object.values(state.daily).reduce((sum,d)=>sum+(Number(d.study)||0),0);
-  let totalEarned=Object.values(state.daily).reduce((sum,d)=>sum+(Number(d.earned)||0),0);
-  let totalSpent=Object.values(state.daily).reduce((sum,d)=>sum+(Number(d.spent)||0),0);
+  let totalStudy=state.totalMin;
+  let totalEarned=state.earned;
+  let totalSpent=state.spent;
 
   document.getElementById('totalStudy').textContent=fmtMin(totalStudy);
   document.getElementById('earned').textContent=Math.round(totalEarned*10)/10;
