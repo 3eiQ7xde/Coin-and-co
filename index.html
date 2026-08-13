@@ -45,6 +45,29 @@ function load(){try{let x=JSON.parse(localStorage.getItem('coinco_v4'));if(x)ret
 function merge(x){return {...BASE,...x,timer:{...BASE.timer,...(x.timer||{})},daily:x.daily||{},inventory:x.inventory||{},collection:x.collection||[],claimed:x.claimed||{},pending:x.pending||{}}}
 function save(){localStorage.setItem('coinco_v4',JSON.stringify(state));render()}
 function key(){return new Date().toLocaleDateString('ja-JP')}
+function resetDailyIfNeeded(){
+  const today=key();
+  const lastDay=localStorage.getItem('coinco_last_day');
+
+  if(lastDay===today)return;
+
+  state.todayMin=0;
+  state.claimed={};
+  state.pending={};
+  state.event=null;
+  state.eventDate=today;
+
+  if(!state.daily[today]){
+    state.daily[today]={
+      study:0,
+      earned:0,
+      spent:0,
+      balance:state.coins
+    };
+  }
+
+  localStorage.setItem('coinco_last_day',today);
+}
 function day(){if(!state.daily[key()])state.daily[key()]={study:0,earned:0,spent:0,balance:state.coins}}
 function fmtMin(m){m=Math.max(0,Math.floor(m));return Math.floor(m/60)?`${Math.floor(m/60)}h ${m%60}m`:`${m}m`}
 function fmtSec(s){s=Math.max(0,Math.floor(s));return `${String(Math.floor(s/3600)).padStart(2,'0')}:${String(Math.floor(s%3600/60)).padStart(2,'0')}:${String(s%60).padStart(2,'0')}`}
@@ -193,5 +216,6 @@ function renderRecords(){
       : '<tr><td colspan="5">まだ記録がありません</td></tr>';
 }
 function renderEvents(){document.getElementById('eventList').innerHTML=EVENTS.map(e=>`<div class="mission"><div><b>${e.emoji} ${e.name}</b><br><span>${e.text}</span></div><strong>${e.rarity}</strong></div>`).join('')}
+resetDailyIfNeeded();
 render();
 </script></body></html>
