@@ -16,7 +16,7 @@
 <div class="panel"><div class="title">ARCADE</div><div class="menu"><button onclick="show('shop')"><span class="big">🏪</span>PRIZE PARLOR</button><button onclick="show('gacha')"><span class="big">🎁</span>宝箱ガチャ</button><button onclick="show('casino')"><span class="big">🎰</span>カジノ</button><button onclick="show('inventory')"><span class="big">🎒</span>所持品</button></div></div></section>
 <section id="shop" class="screen"><div class="panel"><div class="title">🏪 PRIZE PARLOR</div><div class="note">勉強で貯めたコインを現実のご褒美に交換！</div><div id="shopList"></div></div></section>
 <section id="gacha" class="screen"><div class="panel"><div class="title">🎁 LUCKY CHEST</div><div class="chestBox"><b>10🪙で宝箱1個</b><div id="chest" class="chest">🎁</div><div id="gachaMsg" class="spin">宝箱を開けてみよう！</div><button class="btn gold" onclick="openChest()">🔐 宝箱を開ける · 10🪙</button></div><div class="note">🍀 LUCKY CHARM → 次の宝箱のレア度UP。🔐 CHEST KEY → 次の宝箱を無料で開けられます。</div></div></section>
-<section id="casino" class="screen"><div class="panel"><div class="title">🎰 LUCKY CARD CASINO</div><div class="casinoBox"><div>最初のBET：<b>10🪙</b></div><div id="casinoAmount" class="casinoAmount">10🪙</div><div id="casinoMsg" class="casinoMsg">10🪙で挑戦！</div><div id="cards" class="cardChoice"><button class="playCard">🂠</button><button class="playCard">🂠</button><button class="playCard">🂠</button></div><button id="casinoStart" class="btn green full" onclick="startCasino()">🎰 10🪙 BET</button><div id="casinoStop" class="stop" style="display:none"><button class="btn gold" onclick="continueCasino()">もう一回！</button><button class="btn blue" onclick="stopCasino()">STOP</button></div></div><div class="note">3枚から1枚選択。倍率を最大3回まで掛け続けられます。途中でSTOPして、その時点の金額を確定できます。</div></div></section>
+<section id="casino" class="screen"><div class="panel"><div class="title">🎰 LUCKY CARD CASINO</div><div class="casinoBox"><div>最初のBET：<b>10🪙</b></div><div id="casinoAmount" class="casinoAmount">10🪙</div><div id="casinoMsg" class="casinoMsg">10🪙で挑戦！</div><div id="cards" class="cardChoice"><button class="playCard">🂠</button><button class="playCard">🂠</button><button class="playCard">🂠</button></div><button id="casinoStart" class="btn green full" onclick="startCasino()">🎰 10🪙 BET</button><div id="casinoStop" class="stop" style="display:none"><button class="btn gold" onclick="continueCasino()">もう一回！</button><button class="btn blue" onclick="stopCasino()">STOP</button></div></div><div class="note">3枚から1枚選択。倍率を最大3回まで掛け続けられます。途中でSTOPして、その時点の金額を確定できます。×0ならその時点で終了。</div></div></section>
 <section id="inventory" class="screen"><div class="panel"><div class="title">🎒 所持品</div><div class="note">ガチャで手に入れた特殊アイテム。説明を見て［使う］で効果を発動。</div><div id="inventory" class="inventoryGrid" style="margin-top:9px"></div></div><div class="panel"><div class="title">🏆 コレクション</div><div id="collections" class="collectionGrid"></div></div></section>
 <section id="log" class="screen"><div class="panel"><div class="title">📖 PLAYER LOG</div><div class="stats"><div class="stat">累計勉強<b id="totalStudy">0m</b></div><div class="stat">獲得コイン<b id="earned">0</b></div><div class="stat">使用コイン<b id="spent">0</b></div></div><div id="history" class="history" style="margin-top:9px"></div></div><div class="panel"><div class="title">📊 DAILY RECORD</div><div class="tableWrap"><table class="records"><thead><tr><th>日付</th><th>勉強時間</th><th>獲得🪙</th><th>使用🪙</th><th>その日の残高</th></tr></thead><tbody id="records"></tbody></table></div><div class="note">毎日の勉強時間・獲得コイン・使用コイン・その日の残高をセーブデータのように保存します。</div></div><div class="panel"><div class="title">🎴 EVENT CARD COLLECTION</div><div id="eventList"></div></div></section>
 </main></div>
@@ -24,16 +24,17 @@
 <script>
 const EVENTS=[
 {name:'DOUBLE UP',emoji:'⚡',rarity:'RARE',text:'今日一日、獲得するコインが2倍！',type:'double'},
-{name:'LUCKY COIN',emoji:'🪙',rarity:'NORMAL',text:'10コイン獲得。',type:'add',value:10},
-{name:'COIN RAIN',emoji:'🌧️',rarity:'NORMAL',text:'出目×3倍のコイン獲得！',type:'coinrain'},
+{name:'LUCKY COIN',emoji:'🪙',rarity:'NORMAL',text:'5コイン獲得。',type:'add',value:5},
+{name:'COIN RAIN',emoji:'🌧️',rarity:'NORMAL',text:'コインが雨のように降る！',type:'coinrain'},
 {name:'JACKPOT',emoji:'💰',rarity:'RARE',text:'20コイン獲得！',type:'add',value:20},
 {name:'COIN REFUND',emoji:'↩️',rarity:'NORMAL',text:'次のショップ利用で半分返金。',type:'refund'},
 {name:'TAX REFUND',emoji:'🧾',rarity:'NORMAL',text:'今のコインの10%をボーナス。',type:'tax'},
 {name:'SALE DAY',emoji:'🏷️',rarity:'RARE',text:'次の買い物が半額。',type:'half'},
-{name:'FREE TREAT',emoji:'🎁',rarity:'RARE',text:'20コイン以下の商品を1つ無料。',type:'free'},
+{name:'FREE TREAT',emoji:'🎁',rarity:'RARE',text:'15コイン以下の商品を1つ無料。',type:'free'},
 {name:'VIP PASS',emoji:'👑',rarity:'RARE',text:'次のショップ利用が20%OFF。',type:'vip'},
-{name:'STREAK BOOST',emoji:'🔥',rarity:'NORMAL',text:'今日の勉強時間が8時間を超えたら＋20コイン。',type:'streakboost'},
+{name:'STREAK BOOST',emoji:'🔥',rarity:'NORMAL',text:'今日の勉強時間が8時間を超えたら＋10コイン。',type:'streakboost'},
 {name:'GOLDEN TICKET',emoji:'⭐',rarity:'LEGENDARY',text:'ショップの商品を1つ無料。',type:'gold'},
+{name:'LUCKY SHOP',emoji:'🍀',rarity:'RARE',text:'次の買い物がランダムで半額。',type:'luckyshop'}];
 const SHOP=[['🍬','甘いもの',10,'DRINK & SNACK'],['🥤','コーラ',12,'DRINK & SNACK'],['🫖','紅茶',10,'DRINK & SNACK'],['🧶','編み物 30分',15,'HOBBY'],['🧶','編み物 60分',20,'HOBBY'],['📺','動画 30分',15,'VIDEO'],['📺','動画 60分',20,'VIDEO'],['📺','動画 それ以上',23,'VIDEO'],['🪑','休憩時間 10分（スマホなし）',3,'BREAK TIME'],['🍦','アイス1個',200,'SPECIAL REWARDS'],['🍩','ドーナツ1個',200,'SPECIAL REWARDS'],['🍓','好きなフルーツ1個',300,'SPECIAL REWARDS'],['🧶','好きな毛糸を1玉',300,'SPECIAL REWARDS'],['🎬','映画1本',500,'SPECIAL REWARDS']];
 const ITEMS={luckyCharm:['🍀','LUCKY CHARM','次の宝箱のレア度UP'],freePass:['🎫','FREE PASS','ショップの商品1つ無料'],doubleCoin:['💎','DOUBLE COIN','次の勉強で獲得するコイン2倍'],reroll:['🔄','REROLL TICKET','今日のイベントカードを引き直せる'],mysteryBox:['🎁','MYSTERY BOX','宝箱をもう1個開けられる'],goldenTicket:['👑','GOLDEN TICKET','好きなご褒美チケット1枚と交換'],wildCard:['🃏','WILD CARD','コレクションアイテム1個の代わりになる'],chestKey:['🔐','CHEST KEY','次の宝箱を無料で開けられる'],coinMagnet:['🪙','COIN MAGNET','次にコインを獲得したとき＋5コイン'],jackpot:['💰','JACKPOT','＋50コイン'],doubleChest:['🎁','DOUBLE CHEST','宝箱を2個開ける'],royalPass:['👑','ROYAL PASS','ショップ全品20%OFF'],wishCard:['⭐','WISH CARD','好きなご褒美を1つ指定'],masterKey:['💎','MASTER KEY','好きなコレクションアイテム1個GET']};
 const COLLECTIONS=[{name:'RETRO SNACKS',pieces:['🍬','🍭','🍿','🥤'],reward:'ご褒美チケット'},{name:'ARCADE NIGHT',pieces:['🕹️','🎮','👾','🪙'],reward:'映画チケット'},{name:'LUCKY STARS',pieces:['⭐','🌟','✨','💫'],reward:'30コイン'}];
@@ -44,91 +45,17 @@ function load(){try{let x=JSON.parse(localStorage.getItem('coinco_v4'));if(x)ret
 function merge(x){return {...BASE,...x,timer:{...BASE.timer,...(x.timer||{})},daily:x.daily||{},inventory:x.inventory||{},collection:x.collection||[],claimed:x.claimed||{},pending:x.pending||{}}}
 function save(){localStorage.setItem('coinco_v4',JSON.stringify(state));render()}
 function key(){return new Date().toLocaleDateString('ja-JP')}
-function resetDailyIfNeeded(){
-  const today=key();
-  const lastDay=localStorage.getItem('coinco_last_day');
-
-  if(lastDay===today)return;
-
-  state.todayMin=0;
-  state.claimed={};
-  state.pending={};
-  state.event=null;
-  state.eventDate=today;
-
-  if(!state.daily[today]){
-    state.daily[today]={
-      study:0,
-      earned:0,
-      spent:0,
-      balance:state.coins
-    };
-  }
-
-  localStorage.setItem('coinco_last_day',today);
-}
 function day(){if(!state.daily[key()])state.daily[key()]={study:0,earned:0,spent:0,balance:state.coins}}
 function fmtMin(m){m=Math.max(0,Math.floor(m));return Math.floor(m/60)?`${Math.floor(m/60)}h ${m%60}m`:`${m}m`}
 function fmtSec(s){s=Math.max(0,Math.floor(s));return `${String(Math.floor(s/3600)).padStart(2,'0')}:${String(Math.floor(s%3600/60)).padStart(2,'0')}:${String(s%60).padStart(2,'0')}`}
 function nowSec(){return state.timer.running?Math.floor((Date.now()-state.timer.start)/1000):state.timer.elapsed}
 function toast(t){let e=document.getElementById('toast');e.textContent=t;e.style.display='block';clearTimeout(window.toastT);window.toastT=setTimeout(()=>e.style.display='none',2300)}
 function flash(t,s=''){document.getElementById('overlayTitle').textContent=t;document.getElementById('overlaySub').textContent=s;document.getElementById('overlay').style.display='flex';setTimeout(()=>document.getElementById('overlay').style.display='none',850)}
-function show(id){
-  document.querySelectorAll('.screen').forEach(e=>e.classList.remove('active'));
-  document.getElementById(id).classList.add('active');
-
-  document.querySelectorAll('.nav button').forEach(e=>e.classList.remove('active'));
-  document.getElementById('nav-'+id).classList.add('active');
-
-  render();
-
-  if(id==='log'){
-    renderHistory();
-    renderRecords();
-  }
-}
+function show(id){document.querySelectorAll('.screen').forEach(e=>e.classList.remove('active'));document.getElementById(id).classList.add('active');document.querySelectorAll('.nav button').forEach(e=>e.classList.remove('active'));document.getElementById('nav-'+id).classList.add('active');render()}
 function addHistory(text,amount=0){state.history.push({text,amount,at:new Date().toLocaleString('ja-JP')});if(state.history.length>400)state.history.shift()}
 function earn(n,reason){if(n<=0)return;if(state.event?.type==='double')n*=2;if(state.pending.doubleCoin){n*=2;state.pending.doubleCoin=false;addHistory('💎 DOUBLE COIN 発動',0)}if(state.pending.coinMagnet){n+=5;state.pending.coinMagnet=false;addHistory('🪙 COIN MAGNET 発動',5)}state.coins+=n;state.earned+=n;day();state.daily[key()].earned+=n;state.daily[key()].balance=state.coins;addHistory(reason,n)}
 function spend(n,reason){state.coins-=n;state.spent+=n;day();state.daily[key()].spent+=n;state.daily[key()].balance=state.coins;addHistory(reason,-n)}
-function study(min,source){
-  min = Math.floor(Number(min));
-
-  if(!Number.isFinite(min) || min < 1){
-    toast('1分以上から記録できます');
-    return;
-  }
-
-  const today = key();
-
-  if(!state.daily[today]){
-    state.daily[today] = {
-      study: 0,
-      earned: 0,
-      spent: 0,
-      balance: state.coins
-    };
-  }
-
-  // 勉強時間を記録
-  state.todayMin += min;
-  state.totalMin += min;
-  state.daily[today].study += min;
-
-  // 勉強コインを付与
-  const reward = Math.floor(min / 10);
-  if(reward > 0){
-    earn(reward, `📚 ${source} ${min}分勉強`);
-  }
-
-  // 今日の残高を保存
-  state.daily[today].balance = state.coins;
-
-  checkMissions();
-
-  save();
-
-  toast(`＋${reward}🪙！ ${min}分記録`);
-}
+function study(min,source){if(min<10){toast('10分以上から記録できます');return}let counted=min;if(source==='自己申告'&&state.event?.type==='selfdouble')counted*=2;state.todayMin+=counted;state.totalMin+=counted;day();state.daily[key()].study+=counted;state.daily[key()].balance=state.coins;earn(Math.floor(counted/10),`📚 ${source} ${counted}分勉強`);checkMissions();if(state.event?.type==='streakboost'&&state.todayMin>=480&&!state.pending.streakGiven){state.pending.streakGiven=true;earn(10,'🔥 STREAK BOOST達成')}save();toast(`＋${Math.floor(counted/10)}🪙！ ${counted}分記録`)}
 function startTimer(){if(state.timer.running)return;state.timer.start=Date.now()-(state.timer.elapsed||0)*1000;state.timer.running=true;save();flash('STUDY MODE ON','集中タイム、スタート！')}
 function pauseTimer(){if(!state.timer.running)return;state.timer.elapsed=nowSec();state.timer.running=false;state.timer.start=null;save();toast('タイマーを一時停止しました')}
 function finishTimer(){let sec=nowSec();if(sec<60){toast('1分未満なので記録しません');return}let min=Math.floor(sec/60);state.timer={running:false,start:null,elapsed:0};study(min,'タイマー')}
@@ -147,11 +74,11 @@ function chooseReward(){modal('👑 GOLDEN TICKET','好きなご褒美チケッ�
 function chooseWish(){modal('⭐ WISH CARD','好きなご褒美を指定してください。',[['🍦 アイス',()=>wish('アイス')],['🍩 ドーナツ',()=>wish('ドーナツ')],['🍓 フルーツ',()=>wish('フルーツ')],['🧶 毛糸',()=>wish('毛糸')]])}
 function wish(x){closeModal();addHistory(`⭐ WISH CARD → ${x}`,0);toast(`${x}を指定！`);save()}
 function chooseCollection(){let opts=[];COLLECTIONS.forEach((c,ci)=>c.pieces.forEach((p,pi)=>{if(!state.collection.some(x=>x.ci===ci&&x.pi===pi))opts.push([p,()=>{state.collection.push({ci,pi});addHistory(`🏆 COLLECTION ${p} GET`,0);closeModal();checkCollection();save()}])}));if(!opts.length){closeModal();toast('コレクションは全部コンプリート済み！');return}modal('🏆 コレクションアイテム', '好きな1個を選んでGET！',opts.slice(0,4))}
-function checkCollection(){COLLECTIONS.forEach((c,ci)=>{if(c.pieces.every((_,pi)=>state.collection.some(x=>x.ci===ci&&x.pi===pi))&&!state.pending['complete'+ci]){state.pending['complete'+ci]=true;earn(50,`🏆 ${c.name} COMPLETE BONUS`);flash('COLLECTION COMPLETE!','＋20🪙')}})}
+function checkCollection(){COLLECTIONS.forEach((c,ci)=>{if(c.pieces.every((_,pi)=>state.collection.some(x=>x.ci===ci&&x.pi===pi))&&!state.pending['complete'+ci]){state.pending['complete'+ci]=true;earn(20,`🏆 ${c.name} COMPLETE BONUS`);flash('COLLECTION COMPLETE!','＋20🪙')}})}
 function effectiveCost(base){let c=base;if(state.event&&!state.pending.eventUsed){if(state.event.type==='half')c=base/2;if(state.event.type==='vip')c=base*.8;if(state.event.type==='luckyshop'&&Math.random()<.5)c=base/2}if(state.pending.royalPass)c*=.8;return Math.ceil(c*2)/2}
 function buy(i){let s=SHOP[i],free=false;if(state.pending.freePass){free=true}else if(state.event&&!state.pending.eventUsed&&state.event.type==='free'&&s[2]<=15)free=true;else if(state.event&&!state.pending.eventUsed&&state.event.type==='gold')free=true;let cost=free?0:effectiveCost(s[2]);if(state.coins<cost){toast(`あと${Math.ceil((cost-state.coins)*10)/10}🪙必要`);return}modal('🛍️ ご褒美交換',`${s[0]} <b>${s[1]}</b><br>${free?'無料！':cost+'🪙'}<p>このご褒美と交換しますか？</p>`,[['YES!',()=>{closeModal();if(cost)spend(cost,`🛍️ ${s[1]}`);else addHistory(`🛍️ ${s[1]}（無料）`,0);if(state.pending.freePass)state.pending.freePass=false;if(state.event&&!state.pending.eventUsed&&['half','vip','free','gold','refund','luckyshop'].includes(state.event.type)){if(state.event.type==='refund'&&cost)earn(cost/2,'↩️ COIN REFUND');state.pending.eventUsed=true}toast(`${s[0]} ${s[1]}をGET！`);save()}],['NO',closeModal]])}
 function startCasino(){if(state.coins<10){toast('10🪙必要！');return}spend(10,'🎰 CASINO BET');state.casino={amount:10,round:0,choices:[]};document.getElementById('casinoStart').style.display='none';setCards();document.getElementById('casinoMsg').textContent='1枚選んでください！';save()}
-function setCards(){state.casino.choices=[.2,.3,.5,.5,1,1,2,2,2,3,3,5].sort(()=>Math.random()-.5).slice(0,3);document.querySelectorAll('.playCard').forEach(b=>{b.innerHTML='🂠';b.classList.remove('disabled')})}
+function setCards(){state.casino.choices=[0,.5,1,2,3,5].sort(()=>Math.random()-.5).slice(0,3);document.querySelectorAll('.playCard').forEach(b=>{b.innerHTML='🂠';b.classList.remove('disabled')})}
 document.getElementById('cards').addEventListener('click',e=>{let b=e.target.closest('.playCard');if(!b||!state.casino)return;let i=[...document.querySelectorAll('.playCard')].indexOf(b);pickCard(i)})
 function pickCard(i){if(!state.casino?.choices)return;let mult=state.casino.choices[i];document.querySelectorAll('.playCard').forEach(b=>b.classList.add('disabled'));document.querySelectorAll('.playCard')[i].innerHTML=`<span class="mult">×${mult}</span>`;state.casino.amount=Math.floor(state.casino.amount*mult);state.casino.round++;addHistory(`🎰 カジノ ×${mult}`,state.casino.amount);document.getElementById('casinoAmount').textContent=state.casino.amount+'🪙';if(mult===0){finishCasino('💥 0🪙…ここで終了！');return}if(state.casino.round>=3){finishCasino(`🎉 最終結果 ${state.casino.amount}🪙！`);return}document.getElementById('casinoMsg').textContent=`${state.casino.amount}🪙！もう一回挑戦する？`;document.getElementById('casinoStop').style.display='grid';save()}
 function continueCasino(){document.getElementById('casinoStop').style.display='none';setCards();document.getElementById('casinoMsg').textContent='もう一度、1枚選んでください！'}
@@ -166,55 +93,8 @@ function renderMissions(){document.getElementById('missions').innerHTML=MISSIONS
 function renderShop(){let last='';let h='';SHOP.forEach((s,i)=>{if(s[3]!==last){h+=`<div class="category">${s[3]}</div>`;last=s[3]}h+=`<div class="shopRow"><div class="shopIcon">${s[0]}</div><div class="shopName">${s[1]}</div><button class="price" onclick="buy(${i})">${effectiveCost(s[2])}🪙</button></div>`});document.getElementById('shopList').innerHTML=h}
 function renderInventory(){let ks=Object.keys(state.inventory).filter(k=>state.inventory[k]>0);document.getElementById('inventory').innerHTML=ks.length?ks.map(k=>{let d=ITEMS[k];return `<div class="item"><div class="emoji">${d[0]}</div><b>${d[1]}</b><small>×${state.inventory[k]}<br>${d[2]}</small><button class="use" onclick="useItem('${k}')">使う</button></div>`}).join(''):'<div class="note" style="grid-column:1/-1;text-align:center">まだアイテムがありません。宝箱を開けてみよう！</div>'}
 function renderCollections(){document.getElementById('collections').innerHTML=COLLECTIONS.map((c,ci)=>{let have=c.pieces.filter((_,pi)=>state.collection.some(x=>x.ci===ci&&x.pi===pi)).length;return `<div class="collection ${have===c.pieces.length?'complete':''}"><b>${c.name}</b><div class="pieces">${c.pieces.join(' ')}</div><small>${have}/${c.pieces.length} ${have===c.pieces.length?'🏆 COMPLETE!':'COLLECTED'}</small><br><small>コンプリート報酬：${c.reward}</small></div>`}).join('')}
-function renderHistory(){
-  const totalStudy = Object.values(state.daily)
-    .reduce((sum,d) => sum + (Number(d.study) || 0), 0);
-
-  const totalEarned = Object.values(state.daily)
-    .reduce((sum,d) => sum + (Number(d.earned) || 0), 0);
-
-  const totalSpent = Object.values(state.daily)
-    .reduce((sum,d) => sum + (Number(d.spent) || 0), 0);
-
-  document.getElementById('totalStudy').textContent = fmtMin(totalStudy);
-  document.getElementById('earned').textContent =
-    Math.round(totalEarned * 10) / 10;
-  document.getElementById('spent').textContent =
-    Math.round(totalSpent * 10) / 10;
-
-  document.getElementById('history').innerHTML =
-    state.history.length
-      ? state.history.slice().reverse().map(x => `
-          <div class="logItem">
-            ${x.text}
-            <span class="amt">
-              ${x.amount > 0 ? '+' : x.amount < 0 ? '' : ''}
-              ${x.amount ? x.amount + '🪙' : ''}
-            </span>
-            <br>
-            <small>${x.at}</small>
-          </div>
-        `).join('')
-      : '<div class="note">まだ記録がありません。</div>';
-}
-function renderRecords(){
-  const rows = Object.entries(state.daily)
-    .sort((a,b) => b[0].localeCompare(a[0]));
-
-  document.getElementById('records').innerHTML =
-    rows.length
-      ? rows.map(([date,data]) => `
-          <tr>
-            <td>${date}</td>
-            <td>${fmtMin(Number(data.study) || 0)}</td>
-            <td>+${Number(data.earned) || 0}</td>
-            <td>-${Number(data.spent) || 0}</td>
-            <td>${data.balance ?? state.coins}</td>
-          </tr>
-        `).join('')
-      : '<tr><td colspan="5">まだ記録がありません</td></tr>';
-}
+function renderHistory(){document.getElementById('totalStudy').textContent=fmtMin(state.totalMin);document.getElementById('earned').textContent=Math.round(state.earned*10)/10;document.getElementById('spent').textContent=Math.round(state.spent*10)/10;document.getElementById('history').innerHTML=state.history.length?state.history.slice().reverse().map(x=>`<div class="logItem">${x.text}<span class="amt">${x.amount>0?'+':x.amount<0?'':''}${x.amount?x.amount+'🪙':''}</span><br><small>${x.at}</small></div>`).join(''):'<div class="note">まだ記録がありません。</div>'}
+function renderRecords(){let rows=Object.entries(state.daily).sort((a,b)=>a[0].localeCompare(b[0])).reverse();document.getElementById('records').innerHTML=rows.map(([d,v])=>`<tr><td>${d}</td><td>${fmtMin(v.study||0)}</td><td>+${v.earned||0}</td><td>-${v.spent||0}</td><td>${v.balance??state.coins}</td></tr>`).join('')||'<tr><td colspan="5">まだ記録がありません</td></tr>'}
 function renderEvents(){document.getElementById('eventList').innerHTML=EVENTS.map(e=>`<div class="mission"><div><b>${e.emoji} ${e.name}</b><br><span>${e.text}</span></div><strong>${e.rarity}</strong></div>`).join('')}
-resetDailyIfNeeded();
 render();
 </script></body></html>
