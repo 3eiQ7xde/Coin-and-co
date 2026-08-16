@@ -45,6 +45,29 @@ function load(){try{let x=JSON.parse(localStorage.getItem('coinco_v4'));if(x)ret
 function merge(x){return {...BASE,...x,timer:{...BASE.timer,...(x.timer||{})},daily:x.daily||{},inventory:x.inventory||{},collection:x.collection||[],claimed:x.claimed||{},pending:x.pending||{}}}
 function save(){localStorage.setItem('coinco_v4',JSON.stringify(state));render()}
 function key(){return new Date().toLocaleDateString('ja-JP')}
+function resetDailyIfNeeded(){
+  const today=key();
+  const lastDay=localStorage.getItem('coinco_last_day');
+
+  if(lastDay===today)return;
+
+  state.todayMin=0;
+  state.claimed={};
+  state.pending={};
+  state.event=null;
+  state.eventDate=today;
+
+  if(!state.daily[today]){
+    state.daily[today]={
+      study:0,
+      earned:0,
+      spent:0,
+      balance:state.coins
+    };
+  }
+
+  localStorage.setItem('coinco_last_day',today);
+}
 function day(){if(!state.daily[key()])state.daily[key()]={study:0,earned:0,spent:0,balance:state.coins}}
 function fmtMin(m){m=Math.max(0,Math.floor(m));return Math.floor(m/60)?`${Math.floor(m/60)}h ${m%60}m`:`${m}m`}
 function fmtSec(s){s=Math.max(0,Math.floor(s));return `${String(Math.floor(s/3600)).padStart(2,'0')}:${String(Math.floor(s%3600/60)).padStart(2,'0')}:${String(s%60).padStart(2,'0')}`}
@@ -96,5 +119,6 @@ function renderCollections(){document.getElementById('collections').innerHTML=CO
 function renderHistory(){document.getElementById('totalStudy').textContent=fmtMin(state.totalMin);document.getElementById('earned').textContent=Math.round(state.earned*10)/10;document.getElementById('spent').textContent=Math.round(state.spent*10)/10;document.getElementById('history').innerHTML=state.history.length?state.history.slice().reverse().map(x=>`<div class="logItem">${x.text}<span class="amt">${x.amount>0?'+':x.amount<0?'':''}${x.amount?x.amount+'🪙':''}</span><br><small>${x.at}</small></div>`).join(''):'<div class="note">まだ記録がありません。</div>'}
 function renderRecords(){let rows=Object.entries(state.daily).sort((a,b)=>a[0].localeCompare(b[0])).reverse();document.getElementById('records').innerHTML=rows.map(([d,v])=>`<tr><td>${d}</td><td>${fmtMin(v.study||0)}</td><td>+${v.earned||0}</td><td>-${v.spent||0}</td><td>${v.balance??state.coins}</td></tr>`).join('')||'<tr><td colspan="5">まだ記録がありません</td></tr>'}
 function renderEvents(){document.getElementById('eventList').innerHTML=EVENTS.map(e=>`<div class="mission"><div><b>${e.emoji} ${e.name}</b><br><span>${e.text}</span></div><strong>${e.rarity}</strong></div>`).join('')}
+resetDailyIfNeeded();
 render();
 </script></body></html>
